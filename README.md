@@ -1,14 +1,16 @@
-# Pokémon Polished Crystal
+# Pokémon Metallic Sunrise
 
-This is a custom Pokémon game based on [the Pokémon Crystal disassembly](https://github.com/pret/pokecrystal).
+This is a modified version of [Pokémon Polished Crystal](https://github.com/Rangi42/polishedcrystal), originally based on [the Pokémon Crystal disassembly](https://github.com/pret/pokecrystal).
 
-My goal is to create what the title says: an improved, polished version of Pokémon Crystal. It fixes bugs, takes into account the official game changes since 2001, and adds some new ideas of my own. Many features restore what was removed from R/B/Y, or original to HG/SS.
+Metallic Sunrise is designed as a "booster pack" of content, adding a handful of new species while making several changes to existing moves, type combinations, and base stats. The majority of the underlying content is still the Polished team's design, and I have zero intentions of trying to supercede or overshadow their fantastic work - I highly encourage giving the hack a look, and supporting them however you can. Key features of Metallic Sunrise include:
+* 13 added species of Pokémon - five from other regions, five new evolutionary members, and one all-new evolutionary line with three stages.
+* Tweaks to many underwhelming moves, such as String Shot, Horn Attack, and Flash, to make them more compelling options through the early and mid-game.
+* 5 additional TMs distributed throughout the game.
+* Added sources for sought-after items such as Gold and Silver Leaves, Ability Pills, and Mint Leaves.
+* Ice Stones may be obtained by trading points with Buena, allowing certain species to evolve much earlier than Ice Path.
 
-I've had vague plans to make a Pokémon game for years. I'm very impressed by the effort that's gone into disassembling Pokémon Crystal and making the code so well-organized. Thanks to making it open-source (and to the ROM hackers that inspired me), I'm finally making this game a reality.
+All information below this line is currently copied verbatim from the Polished Crystal readme, and will be later edited when I approach an initial release. Thanks for your patience!
 
-> There are many ways to create games but the way we work at Game Freak may be a little different from other companies. That is, we constantly change and tweak what we have come up with. To make a fun game even more fun and polish it up, we take what we have made and start thinking about it from scratch. And to make the game the most fun to play we make endless changes and tweaks no matter how long it takes. It may not be the best way, but I think these tweaks are important to make our games fun and better.
->
-> — Junichi Masuda, "[HIDDEN POWER of masuda No. 7](https://www.gamefreak.co.jp/blog/dir_english/?p=21)"
 
 
 ## Download and Play
