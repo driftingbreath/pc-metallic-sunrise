@@ -1,20 +1,20 @@
 BattleIntroSlidingPics:
-	ld hl, rIE
-	set LCD_STAT, [hl]
 	ldh a, [rSVBK]
 	push af
 	ld a, $5
 	ldh [rSVBK], a
 	call .subfunction1
+	ld hl, rIE
+	set LCD_STAT, [hl]
 	ld a, LOW(rSCX)
 	ldh [hLCDCPointer], a
 	call .subfunction2
+	ld hl, rIE
+	res LCD_STAT, [hl]
 	xor a
 	ldh [hLCDCPointer], a
 	pop af
 	ldh [rSVBK], a
-	ld hl, rIE
-	res LCD_STAT, [hl]
 	ret
 
 .subfunction1
@@ -34,7 +34,7 @@ BattleIntroSlidingPics:
 .loop2
 	ldh a, [rLY]
 	cp $60
-	jr c, .loop2
+	jr nz, .loop2
 	ld a, d
 	ldh [hSCX], a
 	call .subfunction5
@@ -58,7 +58,7 @@ BattleIntroSlidingPics:
 	ret
 
 .subfunction3
-	ld hl, wVirtualOAM + 1 ; x pixel
+	ld hl, wShadowOAM + 1 ; x pixel
 	ld c, $12 ; 18
 	ld de, $4
 .loop3

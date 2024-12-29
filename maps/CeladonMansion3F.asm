@@ -29,8 +29,9 @@ GameFreakGameDesignerScript:
 	faceplayer
 	opentext
 	writetext GameFreakGameDesignerText
-	readvar VAR_DEXCAUGHT
-	ifgreater 252, .CompletedPokedex
+	setval16 NUM_POKEMON
+	special CountCaught
+	iftruefwd .CompletedPokedex
 	waitendtext
 
 .CompletedPokedex:

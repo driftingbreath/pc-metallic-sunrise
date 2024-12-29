@@ -52,6 +52,7 @@ TypeMatchups:
 	db FIGHTING,  DARK,      SUPER_EFFECTIVE
 	db FIGHTING,  STEEL,     SUPER_EFFECTIVE
 	db FIGHTING,  FAIRY,     NOT_VERY_EFFECTIVE
+;	db POISON,    WATER,     SUPER_EFFECTIVE      ; would REALLY like to add this, need to figure out how to edit ingame type chart
 	db POISON,    GRASS,     SUPER_EFFECTIVE
 	db POISON,    POISON,    NOT_VERY_EFFECTIVE
 	db POISON,    GROUND,    NOT_VERY_EFFECTIVE

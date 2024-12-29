@@ -34,8 +34,15 @@ GoldenrodDeptStore4FCooltrainerMText:
 	done
 
 GoldenrodDeptStore4FBugCatcherText:
-	text "Iron adds to your"
-	line "#mon's Defense."
+	text "There are four"
+	line "#mon that"
+
+	para "evolve if exposed"
+	line "to a Linking Cord:"
+
+	para "Machoke, Graveler,"
+	line "Kadabra, and"
+	cont "Haunter!"
 	done
 
 GoldenrodDeptStore4FGameboyKidText:

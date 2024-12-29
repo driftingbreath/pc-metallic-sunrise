@@ -27,8 +27,11 @@ RuinsOfAlphSinjohChamber_MapScriptHeader:
 	const RUINSOFALPHSINJOHCHAMBER_UNOWN_P
 
 RuinsofAlphSinjohChamberSignpost:
+	opentext
 	unowntypeface
-	showtext RuinsofAlphSinjohChamberMystriText
+	writetext RuinsofAlphSinjohChamberMystriText
+	waitbutton
+	closetext
 	restoretypeface
 	showtext RuinsofAlphSinjohChamberSurpriseText
 	special Special_FadeOutMusic
@@ -77,7 +80,7 @@ RuinsofAlphSinjohChamberSignpost:
 	disappear RUINSOFALPHSINJOHCHAMBER_UNOWN_R
 	disappear RUINSOFALPHSINJOHCHAMBER_UNOWN_P
 	checkevent EVENT_LISTENED_TO_CYNTHIA_INTRO
-	iftrue .HeardIntro
+	iftruefwd .HeardIntro
 	setmapscene MYSTRI_STAGE, $1
 	setevent EVENT_MYSTRI_STAGE_CYNTHIA
 	setevent EVENT_MYSTRI_STAGE_EGG
@@ -111,6 +114,6 @@ RuinsofAlphSinjohChamberMystriText:
 	cont "at last."
 	done
 
-RuinsofAlphSinjohChamberSurpriseText:
+RuinsofAlphSinjohChamberSurpriseText: ; text > text
 	text "…!"
 	done

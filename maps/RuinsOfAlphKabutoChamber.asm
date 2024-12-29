@@ -28,18 +28,18 @@ RuinsOfAlphKabutoChamber_MapScriptHeader:
 
 RuinsofAlphKabutoChamberTrigger0:
 	checkevent EVENT_WALL_OPENED_IN_KABUTO_CHAMBER
-	iffalse .End
+	iffalsefwd .End
 	sdefer RuinsofAlphKabutoChamberWallOpenScript
 .End
 	end
 
 RuinsofAlphKabutoChamberHiddenDoorsCallback:
 	checkevent EVENT_WALL_OPENED_IN_KABUTO_CHAMBER
-	iftrue .WallOpen
+	iftruefwd .WallOpen
 	changeblock 4, 0, $24
 .WallOpen:
 	checkevent EVENT_SOLVED_KABUTO_PUZZLE
-	iffalse .FloorClosed
+	iffalsefwd .FloorClosed
 	endcallback
 
 .FloorClosed:
@@ -54,17 +54,17 @@ RuinsofAlphKabutoChamberWallOpenScript:
 	pause 30
 	playsound SFX_STRENGTH
 	changeblock 4, 0, $25
-	reloadmappart
+	refreshmap
 	earthquake 50
 	setscene $1
 	endtext
 
 MapRuinsofAlphKabutoChamberSignpost2Script:
-	refreshscreen
+	reanchormap
 	setval $0
 	special Special_UnownPuzzle
 	closetext
-	iftrue .PuzzleComplete
+	iftruefwd .PuzzleComplete
 	end
 
 .PuzzleComplete:
@@ -77,7 +77,7 @@ MapRuinsofAlphKabutoChamberSignpost2Script:
 	showemote EMOTE_SHOCK, PLAYER, 15
 	changeblock 2, 2, $14
 	changeblock 4, 2, $15
-	reloadmappart
+	refreshmap
 	playsound SFX_STRENGTH
 	earthquake 80
 	applyonemovement PLAYER, skyfall_top
@@ -89,13 +89,13 @@ MapRuinsofAlphKabutoChamberSignpost2Script:
 
 RuinsOfAlphKabutoChamberScientistScript:
 	readvar VAR_UNOWNCOUNT
-	ifequal NUM_UNOWN, .AllUnownCaught
+	ifequalfwd NUM_UNOWN, .AllUnownCaught
 	checkevent EVENT_WALL_OPENED_IN_KABUTO_CHAMBER
 	iftrue_jumptextfaceplayer RuinsOfAlphKabutoChamberScientistHoleText
 	faceplayer
 	opentext
 	checkevent EVENT_SOLVED_KABUTO_PUZZLE
-	iffalse .PuzzleIncomplete
+	iffalsefwd .PuzzleIncomplete
 	writetext RuinsOfAlphKabutoChamberScientistTremorText
 	promptbutton
 .PuzzleIncomplete:
@@ -109,10 +109,13 @@ RuinsOfAlphKabutoChamberScientistScript:
 	jumptextfaceplayer RuinsOfAlphResearchCenterScientist1Text_GotAllUnown
 
 MapRuinsofAlphKabutoChamberSignpost3Script:
+	opentext
 	unowntypeface
-	showtext RuinsOfAlphKabutoChamberDescriptionText
+	writetext RuinsOfAlphKabutoChamberDescriptionText
+	waitbutton
+	closetext
 	restoretypeface
-	special MapCallbackSprites_LoadUsedSpritesGFX
+	special RefreshSprites
 	end
 
 MapRuinsofAlphKabutoChamberSignpost5Script:
@@ -121,9 +124,9 @@ MapRuinsofAlphKabutoChamberSignpost5Script:
 MapRuinsofAlphKabutoChamberSignpost4Script:
 	opentext
 	checkevent EVENT_RUINS_OF_ALPH_OUTSIDE_TOURIST_YOUNGSTERS
-	iftrue .unsolved
+	iftruefwd .unsolved
 	writetext RuinsOfAlphChambersItsUnownText
-	sjump .unownwords
+	sjumpfwd .unownwords
 .unsolved
 	writetext RuinsOfAlphAerodactylChamberWallPatternLeftText
 .unownwords

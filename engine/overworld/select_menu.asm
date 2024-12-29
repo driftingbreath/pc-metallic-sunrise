@@ -22,19 +22,13 @@ CheckRegisteredItem::
 	ld a, [hl]
 	and a
 	jr z, .next
+	ld [wCurKeyItem], a
 	push hl
 	push bc
-	push af
 	call CheckKeyItem
-	jr nc, .registration_ok ; ???
-
-.registration_ok
-	pop af
 	pop bc
 	pop hl
-
-	; Useful if we only have a single registered item
-	ld [wCurKeyItem], a
+	jr nc, .next
 	inc c
 .next
 	inc hl
@@ -88,7 +82,7 @@ UseRegisteredItem:
 	ret
 
 .Party:
-	call RefreshScreen
+	call ReanchorMap
 	call FadeToMenu
 	predef DoKeyItemEffect
 	call CloseSubmenu
@@ -97,7 +91,7 @@ UseRegisteredItem:
 	ret
 
 .Overworld:
-	call RefreshScreen
+	call ReanchorMap
 	ld a, 1
 	ld [wUsingItemWithSelect], a
 	predef DoKeyItemEffect
@@ -112,7 +106,7 @@ UseRegisteredItem:
 	ret
 
 .CantUse:
-	call RefreshScreen
+	call ReanchorMap
 
 ._cantuse
 	call CantUseItem
@@ -135,7 +129,7 @@ GetRegisteredItem:
 	ld bc, 1 palettes
 	call FarCopyColorWRAM
 
-	hlcoord 0, 0, wAttrMap
+	hlcoord 0, 0, wAttrmap
 	ld a, PRIORITY | PAL_BG_TEXT
 	ld bc, SCREEN_WIDTH * 4
 	rst ByteFill
@@ -180,7 +174,7 @@ GetRegisteredItem:
 	ld a, $70
 	ldh [rWY], a
 	ldh [hWY], a
-	call SetPalettes
+	call SetDefaultBGPAndOBP
 	call DelayFrame
 	farcall HDMATransfer_OnlyTopFourRows
 
@@ -248,14 +242,4 @@ endr
 	next1 "▼ -@"
 
 InvertedTextPalette:
-if !DEF(MONOCHROME)
-	RGB 00, 00, 00
-	RGB 00, 00, 00
-	RGB 31, 31, 31
-	RGB 31, 31, 31
-else
-	RGB_MONOCHROME_BLACK
-	RGB_MONOCHROME_BLACK
-	RGB_MONOCHROME_WHITE
-	RGB_MONOCHROME_WHITE
-endc
+INCLUDE "gfx/overworld/register_item.pal"

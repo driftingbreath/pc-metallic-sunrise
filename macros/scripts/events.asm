@@ -23,6 +23,7 @@ ENDM
 MACRO sjump
 	db sjump_command
 	dw \1 ; pointer
+	assert warn, \1 - @ > 255 || \1 - @ < 0, "sjump can be sjumpfwd"
 ENDM
 
 	const farsjump_command
@@ -42,6 +43,7 @@ MACRO ifequal
 	db ifequal_command
 	db \1 ; byte
 	dw \2 ; pointer
+	assert warn, \2 - @ > 255 || \2 - @ < 0, "ifequal can be ifequalfwd"
 ENDM
 
 	const ifnotequal_command
@@ -55,12 +57,14 @@ ENDM
 MACRO iffalse
 	db iffalse_command
 	dw \1 ; pointer
+	assert warn, \1 - @ > 255 || \1 - @ < 0, "iffalse can be iffalsefwd"
 ENDM
 
 	const iftrue_command
 MACRO iftrue
 	db iftrue_command
 	dw \1 ; pointer
+	assert warn, \1 - @ > 255 || \1 - @ < 0, "iftrue can be iftruefwd"
 ENDM
 
 	const ifgreater_command
@@ -137,6 +141,17 @@ MACRO setval
 	db \1 ; value
 ENDM
 
+	const setval16_command
+MACRO setval16
+	db setval16_command
+	dw \1 ; value
+ENDM
+
+MACRO setmonval ; pseudo-command for loading mons into hScriptVar
+	db setval16_command
+	dp \1 ; mon value
+ENDM
+
 	const addval_command
 MACRO addval
 	db addval_command
@@ -149,10 +164,26 @@ MACRO random
 	db \1 ; input
 ENDM
 
+	const random16_command
+MACRO random16
+	db random16_command
+	dw \1 ; input
+ENDM
+
 	const readmem_command
 MACRO readmem
 	db readmem_command
 	dw \1 ; address
+ENDM
+
+	const readmem16_command
+MACRO readmem16
+	db readmem16_command
+	if _NARG == 2
+		dw \1, \2
+	else
+		dw \1, \1+1
+	endc
 ENDM
 
 	const writemem_command
@@ -281,7 +312,7 @@ ENDM
 	const checkpoke_command
 MACRO checkpoke
 	db checkpoke_command
-	db \1 ; pkmn
+	dp \1 ; pkmn
 ENDM
 
 	const givepoke_command
@@ -310,12 +341,10 @@ MACRO givepoke
 		db NO_MOVE
 	endc
 	if _NARG >= 7
-		db \7 ; trainer
-		if \7
-			dw \8 ; trainer_name_pointer
-			dw \9 ; pkmn_nickname
-			dw \<10> ; trainer_ot_pointer
-		endc
+		db TRUE ; trainer
+		dw \7 ; nickname_pointer
+		dw \8 ; ot_name_pointer
+		bigdw \9 ; ot_id
 	else
 		db FALSE ; no trainer
 	endc
@@ -432,7 +461,7 @@ ENDM
 	const getmonname_command
 MACRO getmonname
 	db getmonname_command
-	db \1 ; pokemon
+	dp \1 ; pokemon
 	db \2 ; memory
 ENDM
 
@@ -479,9 +508,9 @@ MACRO opentext
 	db opentext_command
 ENDM
 
-	const refreshscreen_command
-MACRO refreshscreen
-	db refreshscreen_command
+	const reanchormap_command
+MACRO reanchormap
+	db reanchormap_command
 ENDM
 
 	const closetext_command
@@ -504,8 +533,6 @@ ENDM
 	const repeattext_command
 MACRO repeattext
 	db repeattext_command
-	db \1 ; byte
-	db \2 ; byte
 ENDM
 
 	const yesorno_command
@@ -555,13 +582,12 @@ ENDM
 	const pokepic_command
 MACRO pokepic
 	db pokepic_command
-	db \1 ; pokemon
 	if \1 == 0
-		db -1 ; party mon
+		db \1 ; party mon
 	elif _NARG == 2
-		db \2 ; form
+		dp \1, \2 ; form
 	else
-		db 0
+		dp \1, PLAIN_FORM
 	endc
 ENDM
 
@@ -789,9 +815,9 @@ MACRO reloadmap
 	db reloadmap_command
 ENDM
 
-	const reloadmappart_command
-MACRO reloadmappart
-	db reloadmappart_command
+	const refreshmap_command
+MACRO refreshmap
+	db refreshmap_command
 ENDM
 
 	const usestonetable_command
@@ -831,7 +857,13 @@ ENDM
 	const cry_command
 MACRO cry
 	db cry_command
-	db \1 ; cry_id
+	if \1 == 0
+		db \1 ; party mon
+	elif _NARG == 2
+		dp \1, \2 ; form
+	else
+		dp \1, PLAIN_FORM
+	endc
 ENDM
 
 	const playsound_command
@@ -1054,11 +1086,6 @@ MACRO checksave
 	db checksave_command
 ENDM
 
-	const countseencaught_command
-MACRO countseencaught
-	db countseencaught_command
-ENDM
-
 	const trainerpic_command
 MACRO trainerpic
 	db trainerpic_command
@@ -1206,7 +1233,7 @@ ENDM
 MACRO showcrytext
 	db showcrytext_command
 	dw \1 ; text_pointer
-	db \2 ; cry_id
+	dp \2 ; cry_id
 ENDM
 
 	const endtext_command
@@ -1257,12 +1284,9 @@ MACRO checkegg
 ENDM
 
 MACRO callthisasm
-	; "callasm .asm\@" causes a "File stack dump too long, got truncated"
-	; error due to the long filename:linenumber trace of nested macros.
-	db callasm_command
-	dba .asm\@
+	callasm .thisasm\@
 	end
-.asm\@
+.thisasm\@
 ENDM
 
 	const givekeyitem_command
@@ -1312,4 +1336,39 @@ MACRO checkbp
 	dw \1 ; bp
 ENDM
 
-NUM_EVENT_COMMANDS EQU const_value
+	const sjumpfwd_command
+MACRO sjumpfwd
+	assert \1 > @, "sjumpfwd cannot jump backward"
+	db sjumpfwd_command
+	dr \1 - 1 ; distance
+ENDM
+
+	const ifequalfwd_command
+MACRO ifequalfwd
+	assert \2 > @, "ifequalfwd cannot jump backward"
+	db ifequalfwd_command
+	db \1 ; byte
+	dr \2 - 1 ; distance
+ENDM
+
+	const iffalsefwd_command
+MACRO iffalsefwd
+	assert \1 > @, "iffalsefwd cannot jump backward"
+	db iffalsefwd_command
+	dr \1 - 1 ; distance
+ENDM
+
+	const iftruefwd_command
+MACRO iftruefwd
+	assert \1 > @, "iftruefwd cannot jump backward"
+	db iftruefwd_command
+	dr \1 - 1 ; distance
+ENDM
+
+	const scalltable_command
+MACRO scalltable
+	db scalltable_command
+	dw \1 ; pointer table
+ENDM
+
+DEF NUM_EVENT_COMMANDS EQU const_value

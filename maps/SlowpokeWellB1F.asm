@@ -18,7 +18,7 @@ SlowpokeWellB1F_MapScriptHeader:
 	object_event 10,  4, SPRITE_ROCKET_GIRL, SPRITEMOVEDATA_STANDING_RIGHT, 0, 0, -1, -1, 0, OBJECTTYPE_GENERICTRAINER, 4, GenericTrainerGruntF1, EVENT_SLOWPOKE_WELL_ROCKETS
 	object_event  0, 17, SPRITE_KURT, SPRITEMOVEDATA_STANDING_UP, 0, 0, -1, -1, 0, OBJECTTYPE_COMMAND, end, NULL, EVENT_SLOWPOKE_WELL_KURT
 	object_event  7,  4, SPRITE_SLOWPOKETAIL, SPRITEMOVEDATA_POKEMON, 0, 0, -1, -1, 0, OBJECTTYPE_SCRIPT, 0, SlowpokeWellB1FSlowpokeWithMailScript, EVENT_SLOWPOKE_WELL_SLOWPOKES
-	object_event  6,  2, SPRITE_SLOWPOKETAIL, SPRITEMOVEDATA_POKEMON, 0, 0, -1, -1, 0, OBJECTTYPE_POKEMON, SLOWPOKE, SlowpokeWellB1FTaillessSlowpokeText, EVENT_SLOWPOKE_WELL_SLOWPOKES
+	object_event  6,  2, SPRITE_SLOWPOKETAIL, SPRITEMOVEDATA_POKEMON, 0, 0, -1, -1, 0, OBJECTTYPE_SCRIPT, 0, SlowpokeWellB1FTaillessSlowpokeScript, EVENT_SLOWPOKE_WELL_SLOWPOKES
 	strengthboulder_event  3, 2
 	itemball_event 10,  3, SUPER_POTION, 1, EVENT_SLOWPOKE_WELL_B1F_SUPER_POTION
 
@@ -32,20 +32,16 @@ SlowpokeWellB1F_MapScriptHeader:
 GenericTrainerGruntM29:
 	generictrainer GRUNTM, 29, EVENT_BEAT_ROCKET_GRUNTM_29, GruntM29SeenText, GruntM29BeatenText
 
-	text "Sure, we've been"
-	line "hacking the tails"
+	text "Yeah, yeah, laugh"
+	line "it up, you twerp."
 
-	para "off Slowpoke and"
-	line "selling them."
+	para "How 'bout I push"
+	line "YOU down a well?"
 
-	para "Everything we do"
-	line "is for profit."
-
-	para "That's right!"
-	line "We're Team Rocket,"
-
-	para "and we'll do any-"
-	line "thing for money!"
+	para "See if you can"
+	line "battle decently"
+	cont "when your back's"
+	cont "sore like mine!"
 	done
 
 TrainerProton2:
@@ -103,6 +99,12 @@ GenericTrainerGruntF1:
 
 	para "What's wrong with"
 	line "selling them?"
+
+	para "That's right!"
+	line "We're Team Rocket,"
+
+	para "and we'll do any-"
+	line "thing for money!"
 	done
 
 SlowpokeWellB1FSlowpokeWithMailScript:
@@ -113,6 +115,10 @@ SlowpokeWellB1FSlowpokeWithMailScript:
 	yesorno
 	iftrue_jumpopenedtext SlowpokeWellB1FSlowpokeMailText
 	endtext
+
+SlowpokeWellB1FTaillessSlowpokeScript:
+	showcrytext SlowpokeWellB1FTaillessSlowpokeText, SLOWPOKE
+	end
 
 KurtSlowpokeWellVictoryMovementData:
 	step_left
@@ -151,18 +157,19 @@ GruntM29SeenText:
 	para "when some old coot"
 	line "yelled at me."
 
-	para "He startled me so"
-	line "much that I fell"
-	cont "down here."
+	para "We both ended up"
+	line "falling down here!"
 
-	para "I think I'll vent"
-	line "my anger by taking"
+	para "I'm real mad about"
+	line "it! And I'm takin'"
 	cont "it out on you!"
+	
+	para "C'mere, you brat!"
+	line "Ehehehahahaha!"
 	done
 
 GruntM29BeatenText:
-	text "Arrgh! This is NOT"
-	line "my day!"
+	text "Sucked!"
 	done
 
 Proton2SeenText:

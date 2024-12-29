@@ -12,7 +12,7 @@ UnionCaveB1FSouth_MapScriptHeader:
 	def_coord_events
 
 	def_bg_events
-	bg_event  2, 18, BGEVENT_ITEM + X_SPCL_DEF, EVENT_UNION_CAVE_B1F_SOUTH_HIDDEN_X_SPCL_DEF
+	bg_event  2, 18, BGEVENT_ITEM + X_SP_DEF, EVENT_UNION_CAVE_B1F_SOUTH_HIDDEN_X_SP_DEF
 	bg_event 12, 25, BGEVENT_ITEM + NUGGET, EVENT_UNION_CAVE_B1F_SOUTH_HIDDEN_NUGGET
 	bg_event  4, 30, BGEVENT_ITEM + FULL_RESTORE, EVENT_UNION_CAVE_B1F_SOUTH_HIDDEN_FULL_RESTORE
 
@@ -29,7 +29,7 @@ UnionCaveB1FSouth_MapScriptHeader:
 	smashrock_event 11, 15
 	smashrock_event 12, 24
 	itemball_event 14, 20, DUSK_STONE, 1, EVENT_UNION_CAVE_B1F_SOUTH_DUSK_STONE
-	itemball_event  8, 26, SUPER_REPEL, 1, EVENT_UNION_CAVE_B1F_SOUTH_SUPER_REPEL
+	itemball_event  8, 26, ICE_STONE, 1, EVENT_UNION_CAVE_B1F_SOUTH_SUPER_REPEL ; changed from Super Repel
 	itemball_event  2, 28, LIGHT_CLAY, 1, EVENT_UNION_CAVE_B1F_SOUTH_LIGHT_CLAY
 
 GenericTrainerPokemaniacAndrew:

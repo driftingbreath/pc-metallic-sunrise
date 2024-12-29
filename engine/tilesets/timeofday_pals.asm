@@ -48,10 +48,10 @@ _TimeOfDayPals::
 ; push palette
 	ld c, 4 ; NUM_PAL_COLORS
 .push
-	ld d, [hl]
-	inc hl
-	ld e, [hl]
-	inc hl
+	ld a, [hli]
+	ld d, a
+	ld a, [hli]
+	ld e, a
 	push de
 	dec c
 	jr nz, .push
@@ -78,10 +78,10 @@ _TimeOfDayPals::
 	ld e, 4 ; NUM_PAL_COLORS
 .pop
 	pop bc
-	ld [hl], c
-	dec hl
-	ld [hl], b
-	dec hl
+	ld a, c
+	ld [hld], a
+	ld a, b
+	ld [hld], a
 	dec e
 	jr nz, .pop
 
@@ -90,8 +90,9 @@ _TimeOfDayPals::
 	ldh [rSVBK], a
 
 ; update palettes
-	call _UpdateTimePals
-	call DelayFrame
+	farcall LoadMapPalettes
+	farcall EnableDynPalUpdatesNoApply
+	farcall OWFadePalettesInit
 
 ; successful change
 	scf
@@ -107,6 +108,9 @@ _UpdateTimePals::
 	call GetTimePalFade
 	jmp DmgToCgbTimePals
 
+FadeInPalettes_EnableDynNoApply:
+	farcall EnableDynPalUpdatesNoApply
+	; fallthrough
 FadeInPalettes::
 	ld c, 10
 	jmp FadePalettes
@@ -128,16 +132,16 @@ Special_FadeBlackQuickly:
 	jmp ConvertTimePalsDecHL
 
 FillWhiteBGColor:
+; Copy white palette of wBGPals1 Pal0 into white palette of wBGPals1 Pal1-Pal6
 	ldh a, [rSVBK]
 	push af
 	ld a, $5
 	ldh [rSVBK], a
 
-	ld hl, wBGPals1
+	ld hl, wBGPals1 palette 0
 	ld a, [hli]
 	ld e, a
-	ld a, [hli]
-	ld d, a
+	ld d, [hl]
 	ld hl, wBGPals1 palette 1
 	ld c, 6
 .loop

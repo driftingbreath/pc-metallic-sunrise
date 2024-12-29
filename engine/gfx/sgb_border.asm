@@ -24,7 +24,7 @@ InitSGBBorder::
 	call CopyGfxToSuperNintendoVRAM
 
 	ld hl, vTiles0
-	ld bc, VRAM_End - vTiles0
+	ld bc, STARTOF(VRAM) + SIZEOF(VRAM) - vTiles0
 	xor a
 	rst ByteFill
 
@@ -117,7 +117,7 @@ CopyGfxToSuperNintendoVRAM:
 	add hl, de
 	dec c
 	jr nz, .loop
-	ld a, $e3
+	ld a, LCDC_DEFAULT
 	ldh [rLCDC], a ; enables LCD
 	pop hl
 	call SendSGBPacket

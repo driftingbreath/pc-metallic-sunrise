@@ -1,9 +1,12 @@
 Special_CelebiShrineEvent:
 	call DelayFrame
-	ld a, [wVramState]
+	ld a, [wStateFlags]
 	push af
 	xor a
-	ld [wVramState], a
+	ld [wStateFlags], a
+
+	ld a, PAL_OW_GREEN
+	farcall CopySpritePalToOBPal7
 
 	call ClearSpriteAnims
 	ld hl, SpecialCelebiGFX
@@ -15,7 +18,7 @@ Special_CelebiShrineEvent:
 
 	depixel 0, 10, 7, 0
 	ld a, SPRITE_ANIM_INDEX_CELEBI
-	call _InitSpriteAnimStruct
+	call InitSpriteAnimStruct
 	ld hl, SPRITEANIMSTRUCT_TILE_ID
 	add hl, bc
 	ld [hl], $84
@@ -36,9 +39,14 @@ Special_CelebiShrineEvent:
 	call GetCelebiSpriteTile
 	inc d
 	push de
-	ld a, $90
+
+	ldh a, [hUsedOAMIndex]
+	; a = (NUM_SPRITE_OAM_STRUCTS - 4) * SPRITEOAMSTRUCT_LENGTH - a
+	cpl
+	add (NUM_SPRITE_OAM_STRUCTS - 4) * SPRITEOAMSTRUCT_LENGTH + 1
+
 	ld [wCurSpriteOAMAddr], a
-	farcall DoNextFrameForAllSprites
+	farcall DoNextFrameForAllSprites_OW
 	call CelebiEvent_CountDown
 	ld c, 2
 	call DelayFrames
@@ -48,9 +56,9 @@ Special_CelebiShrineEvent:
 
 .done
 	pop af
-	ld [wVramState], a
+	ld [wStateFlags], a
 
-	ld hl, wVirtualOAM + 2
+	ld hl, wShadowOAM + 2
 	xor a
 	ld c, $4
 .OAMloop:
@@ -61,7 +69,7 @@ Special_CelebiShrineEvent:
 	inc a
 	dec c
 	jr nz, .OAMloop
-	ld hl, wVirtualOAM + 4 * 4
+	ld hl, wShadowOAM + 4 * 4
 	ld bc, 36 * 4
 	xor a
 	rst ByteFill
@@ -113,7 +121,7 @@ UpdateCelebiPosition:
 	add hl, bc
 	ld a, [hl]
 	inc [hl]
-	call Cosine
+	farcall Cosine
 	ld hl, SPRITEANIMSTRUCT_XOFFSET
 	add hl, bc
 	ld [hl], a
@@ -221,17 +229,3 @@ GetCelebiSpriteTile:
 	pop bc
 	pop hl
 	ret
-
-CheckCaughtCelebi:
-	ld a, [wBattleResult]
-	bit 6, a
-	jr z, .false
-	ld a, $1
-	ldh [hScriptVar], a
-	ret
-
-.false
-	xor a
-	ldh [hScriptVar], a
-	ret
-

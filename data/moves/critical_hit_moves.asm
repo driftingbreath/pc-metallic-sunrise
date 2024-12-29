@@ -8,4 +8,8 @@ CriticalHitMoves:
 	db CROSS_CHOP
 	db SHADOW_CLAW
 	db STONE_EDGE
+if !DEF(FAITHFUL)
+	db X_SCISSOR
+	db CUT
+endc	
 	db -1

@@ -161,6 +161,9 @@ DayCare_DepositPokemonText:
 	ld a, DAYCARETEXT_DEPOSIT
 	call PrintDayCareText
 	ld a, [wCurPartySpecies]
+	ld c, a
+	ld a, [wCurForm]
+	ld b, a
 	call PlayCry
 	ld a, DAYCARETEXT_COME_BACK_LATER
 	jr PrintDayCareText
@@ -218,6 +221,9 @@ DayCare_TakeMoney_PlayCry:
 	ld a, DAYCARETEXT_WITHDRAW
 	call PrintDayCareText
 	ld a, [wCurPartySpecies]
+	ld c, a
+	ld a, [wCurForm]
+	ld b, a
 	call PlayCry
 	ld a, DAYCARETEXT_TOO_SOON
 	; fallthrough
@@ -409,11 +415,9 @@ Special_DayCareManOutside:
 	farcall CurBoxFullCheck
 	jr z, .box_not_full
 	ld hl, .CurBoxFullText
-	push bc
 	call PrintText
-	pop bc
 .box_not_full
-	farcall GetBoxName
+	farcall GetCurBoxName
 	ld hl, .SentToPCText
 	call PrintText
 .done
@@ -473,7 +477,7 @@ Special_DayCareManOutside:
 
 DayCare_GiveEgg:
 ; returns z if mon sent to party, nz if sent to box
-; returns c if no room in party or box 
+; returns c if no room in party or box
 	call DayCare_GenerateEgg
 	ld a, [wTempMonLevel]
 	ld [wCurPartyLevel], a
@@ -481,22 +485,10 @@ DayCare_GiveEgg:
 	ld [wCurSpecies], a
 	ld [wCurPartySpecies], a
 
-	; Red Gyarados' Eggs should be plain
-	cp MAGIKARP
-	jr nz, .not_red_magikarp
-	ld a, [wTempMonForm]
-	and SPECIESFORM_MASK
-	cp GYARADOS_RED_FORM
-	jr c, .not_red_magikarp
-	ld a, [wTempMonForm]
-	and $ff - SPECIESFORM_MASK
-	or PLAIN_FORM
-	ld [wTempMonForm], a
-.not_red_magikarp
 	; Recalculates stats and sets other partymon stuff.
 	farcall SetTempPartyMonData
 	farcall AddTempMonToParty
-	ld a, 0
+	ld a, 0 ; no-optimize a = 0
 	jr nc, .done
 	farcall NewStorageBoxPointer
 	jr c, .PartyAndBoxFull
@@ -686,44 +678,54 @@ DayCare_InitBreeding:
 DayCare_GenerateEgg:
 	ld a, [wBreedMon1Species]
 	ld [wCurPartySpecies], a
-	ld a, [wBreedMon1Gender]
-	ld [wTempMonGender], a
 	ld a, $3
 	ld [wMonType], a
+
+	assert !HIGH(DITTO)
+	ld a, [wBreedMon1Form]
+	ld [wTempMonForm], a
+	and EXTSPECIES_MASK
+	jr nz, .first_dittocheck_done
 	ld a, [wBreedMon1Species]
 	cp DITTO
 	ld a, 1
 	jr z, .LoadWhichBreedmonIsTheMother
+.first_dittocheck_done
+	ld a, [wBreedMon2Form]
+	and EXTSPECIES_MASK
+	jr nz, .second_dittocheck_done
 	ld a, [wBreedMon2Species]
-	cp DITTO
-	ld a, 0
+	sub DITTO
 	jr z, .LoadWhichBreedmonIsTheMother
-	farcall GetGender
-	ld a, 0
-	jr z, .LoadWhichBreedmonIsTheMother
-	inc a
-
+.second_dittocheck_done
+	farcall GetGender ; checks wBreedMon1Form, returns 0 for female, 1 for male
 .LoadWhichBreedmonIsTheMother:
 	; load wCurForm for base data check later
 	ld [wBreedMotherOrNonDitto], a
 	and a
-	ld a, [wBreedMon1Form]
-	ld [wCurForm], a
 	ld a, [wBreedMon1Species]
+	ld [wCurPartySpecies], a
+	ld a, [wBreedMon1Form]
 	jr z, .GotMother
-	ld a, [wBreedMon2Form]
-	ld [wCurForm], a
 	ld a, [wBreedMon2Species]
+	ld [wCurPartySpecies], a
+	ld a, [wBreedMon2Form]
 
 .GotMother:
-	ld [wCurPartySpecies], a
+	and SPECIESFORM_MASK
+	ld [wCurForm], a
 	farcall GetBaseEvolution
 	ld a, EGG_LEVEL
 	ld [wCurPartyLevel], a
 
 	ld a, [wCurPartySpecies]
+	ld [wCurSpecies], a
 	cp NIDORAN_F
-	jr nz, .GotEggSpecies
+	jr nz, .nidoran_check_done
+	assert !HIGH(NIDORAN_F)
+	ld a, [wCurForm]
+	and EXTSPECIES_MASK
+	jr nz, .nidoran_check_done
 
 	; random Nidoran offspring
 	call Random
@@ -732,10 +734,10 @@ DayCare_GenerateEgg:
 	sbc a
 	and NIDORAN_F - NIDORAN_M
 	add NIDORAN_M
-.GotEggSpecies:
 	ld [wCurPartySpecies], a
 	ld [wCurSpecies], a
 
+.nidoran_check_done
 	; Clear tempmon struct
 	xor a
 	ld hl, wTempMon
@@ -744,16 +746,44 @@ DayCare_GenerateEgg:
 
 	ld a, [wCurPartySpecies]
 	ld [wTempMonSpecies], a
+	ld c, a
 
-	; Form inheritance: from the mother or non-Ditto. If both
-	; parents share species, pick at random.
+	; Form inheritance: from the mother or non-Ditto.
+	; Should only happen if stored pre-evo form is NO_FORM.
+	; If both parents share species, pick at random.
 	; Must assign [wCurForm] before GetBaseData.
 	ld hl, wBreedMon1Form
-	call .inherit_mother_unless_samespecies
+	call .inherit_mother_unless_samespecies ; this should preserve c!
+	ld a, [wCurForm]
+	ld b, a
+	and FORM_MASK
+	jr nz, .form_ok
+	ld a, b
+	and EXTSPECIES_MASK ; get extspecies of child
+	ld b, a
 	ld a, [hl]
-	and SPECIESFORM_MASK
+	and FORM_MASK ; get form of parent
+	or b
 	ld [wCurForm], a
+	ld b, a
 
+; it's useful for mons to have forms found only in CosmeticSpeciesAndFormTable (see: Ekans)
+; but we don't want to breed mons that shouldn't be hatched (see: Spiky-eared Pichu)
+	push bc
+	call GetCosmeticSpeciesAndFormIndex ; first, ensure the form even exists for this mon
+	pop bc
+	jr nc, .clear_form
+	ld hl, InvalidBreedmons
+	call GetSpeciesAndFormIndexFromHL
+	jr nc, .form_ok
+.clear_form
+	ld hl, wCurForm
+	ld a, [hl]
+	and EXTSPECIES_MASK
+	or PLAIN_FORM
+	ld [hl], a
+
+.form_ok
 	call GetBaseData
 
 	; Set name and item
@@ -766,9 +796,6 @@ DayCare_GenerateEgg:
 	rst CopyBytes
 	xor a
 	ld [wTempMonItem], a
-
-	; Set moves for the egg
-	call InitEggMoves
 
 	; Set OTID to the player
 	ld hl, wTempMonID
@@ -840,19 +867,25 @@ DayCare_GenerateEgg:
 	; hold it)
 	ld b, 3
 	ld a, [wBreedMon1Item]
+	cp ABILITYPATCH
+	jr z, .parent1_abilitypatch
 	cp ABILITY_CAP
 	jr nz, .no_parent1_abilitycap
+.parent1_abilitypatch
 	dec b
 .no_parent1_abilitycap
 	ld a, [wBreedMon2Item]
+	cp ABILITYPATCH
+	jr z, .parent2_abilitypatch
 	cp ABILITY_CAP
 	jr nz, .no_parent2_abilitycap
+.parent2_abilitypatch
 	dec b
 .no_parent2_abilitycap
 	ld a, b
 	cp 3
 	jr z, .no_ha_boost
-	sla a
+	add a
 	call BattleRandomRange
 	and a
 	jr nz, .no_ha_boost
@@ -997,6 +1030,9 @@ DayCare_GenerateEgg:
 	; Mark as an egg (same byte as form)
 	set MON_IS_EGG_F, [hl]
 
+	; Set moves for the egg
+	call InitEggMoves
+
 	; Ball inheritance: from the mother or non-Ditto. If both
 	; parents share species, pick at random.
 	ld hl, wBreedMon1CaughtBall
@@ -1025,9 +1061,9 @@ DayCare_GenerateEgg:
 	add b
 	ld hl, wTempMonHappiness
 	ld [hli], a
+
+	; Clear pokérus status
 	xor a
-	ld [hli], a
-	ld [hli], a
 	ld [hl], a
 	ld a, [wCurPartyLevel]
 	ld [wTempMonLevel], a
@@ -1037,6 +1073,14 @@ DayCare_GenerateEgg:
 	ld a, [wBreedMon1Species]
 	ld b, a
 	ld a, [wBreedMon2Species]
+	cp b
+	ld a, [wBreedMotherOrNonDitto]
+	jr nz, .use_mother
+	ld a, [wBreedMon1ExtSpecies]
+	and EXTSPECIES_MASK
+	ld b, a
+	ld a, [wBreedMon2ExtSpecies]
+	and EXTSPECIES_MASK
 	cp b
 	ld a, [wBreedMotherOrNonDitto]
 	jr nz, .use_mother
@@ -1050,3 +1094,5 @@ DayCare_GenerateEgg:
 
 .String_EGG:
 	rawchar "Egg@"
+
+INCLUDE "data/pokemon/invalid_breedmons.asm"

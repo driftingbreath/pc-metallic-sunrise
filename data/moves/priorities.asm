@@ -4,6 +4,7 @@ MovePriorities:
 	db ENDURE,        4
 	db PROTECT,       4
 	db EXTREMESPEED,  2
+	db DYNAMICPUNCH,  2
 	db AQUA_JET,      1
 	db BULLET_PUNCH,  1
 	db ICE_SHARD,     1
@@ -12,6 +13,7 @@ MovePriorities:
 	db SUCKER_PUNCH,  1
 	; everything else 0
 	db AVALANCHE,    -4
+	db ZAP_CANNON,   -4
 	db COUNTER,      -5
 	db MIRROR_COAT,  -5
 	db ROAR,         -6

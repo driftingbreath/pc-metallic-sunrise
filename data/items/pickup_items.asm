@@ -4,11 +4,13 @@ BasePickupTable:
 	db SUPER_POTION
 	db GREAT_BALL
 	db REPEL
-	db ESCAPE_ROPE
+;	db ESCAPE_ROPE
 	db FULL_HEAL
-	db HYPER_POTION
+;	db HYPER_POTION
 	db ULTRA_BALL
 	db REVIVE
+	db GOLD_LEAF ; tutor leaves no longer drop from Headbutt trees, so they were added to Pickup as an alternative to encounter grinding
+	db SILVER_LEAF ; see above
 	db RARE_CANDY
 	db DUSK_STONE
 	db SHINY_STONE

@@ -8,7 +8,7 @@ _MemoryGame:
 
 .LoadGFXAndPals:
 	call DisableLCD
-	ld a, CGB_DIPLOMA
+	ld a, CGB_PLAIN
 	call GetCGBLayout
 	call ClearSpriteAnims
 	ld hl, MemoryGameGFX
@@ -34,7 +34,7 @@ _MemoryGame:
 	ld [wJumptableIndex], a
 	ld a, $1
 	ldh [hBGMapMode], a
-	ld a, %11100011
+	ld a, rLCDC_DEFAULT
 	ldh [rLCDC], a
 	ld a, $e4
 	call DmgToCgbBGPals
@@ -106,7 +106,7 @@ endr
 .spawn_object
 	depixel 6, 3, 4, 4
 	ld a, SPRITE_ANIM_INDEX_MEMORY_GAME
-	call _InitSpriteAnimStruct
+	call InitSpriteAnimStruct
 	ld a, 5
 	ld [wMemoryGameNumberTriesRemaining], a
 	ld hl, wJumptableIndex
@@ -413,8 +413,8 @@ MemoryGame_GetDistributionOfTiles:
 
 MemoryGame_PlaceCard:
 	ld a, [wMemoryGameLastCardPicked]
-	sla a
-	sla a
+	add a
+	add a
 	add 4
 	ld [hli], a
 	inc a

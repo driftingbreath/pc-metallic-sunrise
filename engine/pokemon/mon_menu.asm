@@ -133,8 +133,10 @@ SwitchPartyMons:
 
 	farcall InitPartySwap
 	call ApplyTilemapInVBlank
-	call SetPalettes
 	call DelayFrame
+
+	ld a, A_BUTTON | B_BUTTON | SELECT
+	ld [wMenuJoypadFilter], a
 
 	farcall PartyMenuSelect
 	bit 1, b
@@ -146,6 +148,7 @@ SwitchPartyMons:
 	ld [wPartyMenuActionText], a
 
 	farcall LoadPartyMenuGFX
+	call SetDefaultBGPAndOBP
 	farcall InitPartyMenuWithCancel
 	farcall InitPartyMenuGFX
 
@@ -161,8 +164,8 @@ GiveTakePartyMonItem:
 
 ; Eggs can't hold items!
 	ld a, MON_IS_EGG
-	call GetPartyParamLocation
-	bit MON_IS_EGG_F, [hl]
+	call GetPartyParamLocationAndValue
+	bit MON_IS_EGG_F, a
 	jr nz, .cancel
 
 	call GetPartyItemLocation
@@ -378,7 +381,7 @@ SwapPartyItem:
 	ld a, 4
 	ld [wPartyMenuActionText], a
 	farcall WritePartyMenuTilemap
-	farcall PrintPartyMenuText
+	farcall PlacePartyMenuText
 	hlcoord 0, 1
 	ld bc, 20 * 2
 	ld a, [wSwitchMon]
@@ -386,11 +389,32 @@ SwapPartyItem:
 	rst AddNTimes
 	ld [hl], "▷"
 	call ApplyTilemapInVBlank
-	call SetPalettes
+	call SetDefaultBGPAndOBP
 	call DelayFrame
 	farcall PartyMenuSelect
 	bit 1, b
 	jr c, .DontSwap
+
+	; Eggs can't hold items.
+	ld a, MON_IS_EGG
+	call GetPartyParamLocationAndValue
+	bit MON_IS_EGG_F, a
+	jr nz, .DontSwap
+
+	; First, swap mail metadata. Don't bother checking if we are holding Mail,
+	; doing the swap either way is harmless and simplifies checks.
+	; Note that wCurPartyMon is 0-indexed while wSwitchMon is 1-indexed.
+	push bc
+	push de
+	ld a, [wCurPartyMon]
+	inc a
+	ld c, a
+	ld a, [wSwitchMon]
+	ld e, a
+	farcall SwapPartyMonMail
+	pop de
+	pop bc
+
 	; wSwitchMon contains first selected pkmn
 	; wCurPartyMon contains second selected pkmn
 	; getting pkmn2 item and putting into stack item addr + item id
@@ -453,28 +477,34 @@ UpdateMewtwoForm:
 	ld d, h
 	ld e, l
 	ld a, MON_FORM
-	call GetPartyParamLocation
+	call GetPartyParamLocationAndValue
 _UpdateMewtwoForm:
 	ld a, [wCurPartySpecies]
 	cp MEWTWO
 	ret nz
+	assert !HIGH(MEWTWO)
+	ld a, [hl]
+	and EXTSPECIES_MASK
+	ret nz
 	ld a, [de]
 	cp ARMOR_SUIT
 	ld a, MEWTWO_ARMORED_FORM
+	lp bc, MEWTWO, MEWTWO_ARMORED_FORM
 	jr z, .got_form
-	dec a ; PLAIN_FORM
+	assert MEWTWO_ARMORED_FORM - 1 == PLAIN_FORM
+	dec a
+	dec b
 .got_form
 	ld d, a
 	ld a, [hl]
-	and $ff - SPECIESFORM_MASK
+	and ~SPECIESFORM_MASK
 	or d
 	ld [hl], a
-	ret
+	jmp SetSeenAndCaughtMon
 
 GiveTakeItemMenuData:
-	db %01010000
-	db 10, 13 ; start coords
-	db 17, 19 ; end coords
+	db MENU_BACKUP_TILES | MENU_SPRITE_ANIMS
+	menu_coords 13, 10, 19, 17
 	dw .Items
 	db 1 ; default option
 
@@ -525,7 +555,7 @@ CantPlaceMailInStorageText:
 GetPartyItemLocation:
 	push af
 	ld a, MON_ITEM
-	call GetPartyParamLocation
+	call GetPartyParamLocationAndValue
 	pop af
 	ret
 
@@ -603,9 +633,8 @@ MonMailAction:
 	ret
 
 .MenuDataHeader:
-	db $40 ; flags
-	db 10, 12 ; start coords
-	db 17, 19 ; end coords
+	db MENU_BACKUP_TILES
+	menu_coords 12, 10, 19, 17
 	dw .MenuData2
 	db 1 ; default option
 
@@ -704,7 +733,13 @@ _OpenPartyStats:
 	ld a, TEMPMON
 	ld [wMonType], a
 	predef StatsScreenInit
+	; This ensures that MaxVolume works as it should if we're in the middle of
+	; playing a cry.
+	ld a, MAX_VOLUME
+	ld [wLastVolume], a
 	call MaxVolume
+	xor a
+	ld [wLastVolume], a
 	call ExitMenu
 	xor a
 	ret
@@ -795,17 +830,17 @@ MonMenu_FreshSnack:
 .CheckMonHasEnoughHP:
 ; Need to have at least (MaxHP / 5) HP left.
 	ld a, MON_MAXHP
-	call GetPartyParamLocation
-	ld a, [hli]
+	call GetPartyParamLocationAndValue
+	inc hl
 	ldh [hDividend + 0], a
 	ld a, [hl]
 	ldh [hDividend + 1], a
 	ld a, 5
 	ldh [hDivisor], a
 	ld b, 2
-	call Divide
+	farcall Divide
 	ld a, MON_HP + 1
-	call GetPartyParamLocation
+	call GetPartyParamLocationAndValue
 	ldh a, [hQuotient + 2]
 	sub [hl]
 	dec hl
@@ -876,7 +911,7 @@ ChooseMoveToForget:
 	call SpeechTextbox
 .done
 	call ApplyTilemapInVBlank
-	call SetPalettes
+	call SetDefaultBGPAndOBP
 	call DelayFrame
 	pop af
 	ret
@@ -905,7 +940,7 @@ ChooseMoveToRelearn:
 	push af
 	call nz, SpeechTextbox
 	call ApplyTilemapInVBlank
-	call SetPalettes
+	call SetDefaultBGPAndOBP
 	call DelayFrame
 .no_moves
 	pop af
@@ -1073,23 +1108,7 @@ MoveScreenLoop:
 	add hl, bc
 	ld a, [hl]
 	ld [wMoveScreenSelectedMove], a
-	ld a, [wMoveScreenMode]
-	cp MOVESCREEN_NEWMOVE
 	ld a, c
-	jr nz, .ok
-	ld a, [hl]
-	push bc
-	ld hl, HMMoves
-	call IsInByteArray
-	pop bc
-	ld a, c
-	jr nc, .ok
-	cp 4 ; selected new move
-	jr z, .ok
-	ld hl, Text_CantForgetHM
-	call PrintTextNoBox
-	jr .outer_loop
-.ok
 	inc a
 	and a
 	ret
@@ -1101,7 +1120,7 @@ MoveScreenLoop:
 	ret z
 	xor a
 	ld [wMoveSwapBuffer], a
-	jmp .outer_loop
+	jr .outer_loop
 .pressed_select
 	ld a, [wMoveScreenMode]
 	and a
@@ -1114,7 +1133,7 @@ MoveScreenLoop:
 	ld a, [wMoveScreenCursor]
 	inc a
 	ld [wMoveSwapBuffer], a
-	jmp .outer_loop
+	jr .outer_loop
 .pressed_right
 	ld a, [wMoveScreenMode]
 	and a
@@ -1230,16 +1249,30 @@ MoveScreenLoop:
 	jmp .loop
 
 .perform_swap
+	; If we are swapping moves of the currently active mon in an ongoing battle,
+	; and the mon isn't transformed, we need special behaviour.
+
+	; Are we in a battle?
 	ld a, [wBattleMode]
 	and a
 	jr z, .regular_swap_move
 
-	; If we're transformed, the Moves screen shows our original moveset.
-	; So swapping in the moves screen swap our original moves, while
-	; swapping in the battle interface swaps our temporary moves.
+	; Are we transformed?
 	ld a, [wPlayerSubStatus2]
 	bit SUBSTATUS_TRANSFORMED, a
 	jr nz, .regular_swap_move
+
+	; Are we swapping the moves of our current battler?
+	ld a, [wCurBattleMon]
+	inc a
+	ld h, a
+
+	; wTempMonBox == 0 is implicit mid-battle.
+	ld a, [wTempMonSlot]
+	cp h
+	jr nz, .regular_swap_move
+
+	; Use the battle-specific moveswap routine.
 	ld a, [wMoveScreenCursor]
 	inc a
 	ld [wMenuCursorY], a
@@ -1310,35 +1343,28 @@ GetForgottenMoves::
 ; and moves the mon already knows
 	; c = species
 	ld a, MON_SPECIES
-	call GetPartyParamLocation
-	ld c, [hl]
+	call GetPartyParamLocationAndValue
+	ld c, a
 	; b = form
 	ld a, MON_FORM
-	call GetPartyParamLocation
-	ld a, [hl]
+	call GetPartyParamLocationAndValue
 	and SPECIESFORM_MASK
 	ld b, a
 	; bc = index
-	call GetSpeciesAndFormIndex
-	dec bc
-	ld hl, EvosAttacksPointers
-	add hl, bc
-	add hl, bc
-	ld a, BANK(EvosAttacksPointers)
-	call GetFarWord
+	predef GetEvosAttacksPointer
 .skip_evos
 	ld a, BANK(EvosAttacks)
 	call GetFarByte
 	inc hl
-	and a
+	inc a
 	jr nz, .skip_evos
 
 	ld de, wMoveScreenMoves
 	ld c, a
 	push hl
 	ld a, MON_LEVEL
-	call GetPartyParamLocation
-	ld b, [hl]
+	call GetPartyParamLocationAndValue
+	ld b, a
 	pop hl
 	inc b ; so that we can use jr nc
 .loop
@@ -1358,7 +1384,7 @@ GetForgottenMoves::
 	push bc
 	ld b, a
 	ld a, MON_MOVES
-	call GetPartyParamLocation
+	call GetPartyParamLocationAndValue
 	ld c, NUM_MOVES
 	ld a, b
 	call .move_exists
@@ -1411,7 +1437,7 @@ SetUpMoveScreenBG:
 	ld [wTempIconSpecies], a
 	ld a, [wTempMonForm]
 	ld [wCurForm], a
-	farcall LoadMoveMenuMonIcon
+	farcall LoadMoveMenuMonMini
 	hlcoord 0, 1
 	lb bc, 9, 18
 	call Textbox
@@ -1424,10 +1450,9 @@ SetUpMoveScreenBG:
 	ld de, wTempMonNickname
 	hlcoord 5, 1
 	rst PlaceString
-	ld h, b
-	ld l, c
+	hlcoord 15, 1
 	call PrintLevel
-	call SetPalettes
+	call SetDefaultBGPAndOBP
 	hlcoord 16, 0
 	lb bc, 1, 3
 	jmp ClearBox
@@ -1482,7 +1507,7 @@ MoveScreen_ListMoves:
 	cp MOVESCREEN_REMINDER
 	jr z, .got_pp
 	ld a, MON_PP
-	call GetPartyParamLocation
+	call GetPartyParamLocationAndValue
 	ld c, NUM_MOVES
 	ld de, wTempMonPP
 	ld a, [wMoveScreenOffset]
@@ -1506,7 +1531,7 @@ MoveScreen_ListMoves:
 	; Now we have things set up correctly
 	hlcoord 10, 4
 	predef ListMovePP
-	hlcoord 1, 12, wAttrMap
+	hlcoord 1, 12, wAttrmap
 	ld bc, 6
 	xor a
 	rst ByteFill
@@ -1562,8 +1587,6 @@ MoveScreen_ListMovesFast:
 	hlcoord 18, 10
 	ld [hl], "▼"
 .skip_down
-
-PlaceMoveData:
 	ld a, [wMoveSwapBuffer]
 	and a
 	jr z, .not_swapping
@@ -1605,7 +1628,7 @@ PlaceMoveData:
 	ld de, wBGPals1 palette 0 + 2
 	push af
 	farcall LoadCategoryAndTypePals
-	call SetPalettes
+	call SetDefaultBGPAndOBP
 
 	pop af
 	ld hl, TypeIconGFX
@@ -1643,8 +1666,8 @@ PlaceMoveData:
 	ld hl, Moves + MOVE_ACC
 	call GetCurMoveProperty
 	hlcoord 15, 12
-	cp 2
-	jr c, .no_acc
+	cp -1
+	jr nc, .no_acc
 	ld [wTextDecimalByte], a
 	ld de, wTextDecimalByte
 	lb bc, 1, 3
@@ -1666,8 +1689,3 @@ String_na:
 
 String_PowAcc:
 	db "   <BOLDP>/   %@"
-
-Text_CantForgetHM:
-; HM moves can't be forgotten now.
-	text_far _MoveCantForgetHMText
-	text_end

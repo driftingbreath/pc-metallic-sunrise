@@ -1,15 +1,22 @@
 ; Functions dealing with palettes.
 
+UpdateCGBPalsLYTimed:
+; checks if there is time to run UpdateCGBPals.
+	ldh a, [rLY]
+	cp 150
+	ret nc
+	; fallthrough
 UpdateCGBPals::
 ; any pals to update?
 	ldh a, [hCGBPalUpdate]
 	and a
 	ret z
-
+	; fallthrough
 ForceUpdateCGBPals::
 ; update bgp data from wBGPals2
 ; update obp data from wOBPals2
 ; return carry if successful
+; Completes in 588 cycles
 
 	ldh a, [rSVBK]
 	push af
@@ -109,7 +116,7 @@ DmgToCgbObjPals::
 	ldh a, [rSVBK]
 	push af
 
-	ld a, 5
+	ld a, BANK(wOBPals1)
 	ldh [rSVBK], a
 
 ; copy & reorder obj pal buffer
@@ -198,17 +205,15 @@ CopyPals::
 	ld l, a
 	ld h, 0
 	add hl, de
-	ld e, [hl]
-	inc hl
+	ld a, [hli]
 	ld d, [hl]
 
 ; dest
 	pop hl
 ; write color
-	ld [hl], e
-	inc hl
-	ld [hl], d
-	inc hl
+	ld [hli], a
+	ld a, d
+	ld [hli], a
 ; next pal color
 	srl b
 	srl b
@@ -237,7 +242,7 @@ ClearVBank1::
 	ldh [rVBK], a
 
 	ld hl, vTiles0
-	ld bc, VRAM_End - vTiles0
+	ld bc, STARTOF(VRAM) + SIZEOF(VRAM) - vTiles0
 	xor a
 	rst ByteFill
 
@@ -251,6 +256,21 @@ Special_ReloadSpritesNoPalettes::
 	ld a, BANK(wBGPals2)
 	ldh [rSVBK], a
 	ld hl, wBGPals2
+	ld bc, 8 palettes
+	xor a
+	rst ByteFill
+	pop af
+	ldh [rSVBK], a
+	ld a, 1
+	ldh [hCGBPalUpdate], a
+	jmp DelayFrame
+
+SetBlackObjectPals::
+	ldh a, [rSVBK]
+	push af
+	ld a, BANK(wOBPals2)
+	ldh [rSVBK], a
+	ld hl, wOBPals2
 	ld bc, 8 palettes
 	xor a
 	rst ByteFill

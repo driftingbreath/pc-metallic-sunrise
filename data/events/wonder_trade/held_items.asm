@@ -29,4 +29,4 @@ WonderTradeRareItems:
 	db EVIOLITE
 	db LEFTOVERS
 	db RARE_CANDY
-	db ABILITY_CAP
+	db ABILITYPATCH

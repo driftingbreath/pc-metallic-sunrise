@@ -23,7 +23,11 @@ MoveNames::
 	li "DazzlinGleam"
 	li "Volt Switch"
 	li "Vine Whip"
+if DEF(FAITHFUL)
 	li "Stomp"
+else
+	li "Heel Smash"
+endc
 	li "Double Kick"
 	li "Flare Blitz"
 	li "Stone Edge"
@@ -111,7 +115,11 @@ MoveNames::
 	li "Smokescreen"
 	li "Confuse Ray"
 	li "Aqua Tail"
+if DEF(FAITHFUL)
 	li "Defense Curl"
+else
+	li "Scrunch"
+endc
 	li "Barrier"
 	li "Light Screen"
 	li "Haze"
@@ -119,7 +127,11 @@ MoveNames::
 	li "Focus Energy"
 	li "Flash Cannon"
 	li "Metronome"
+if DEF(FAITHFUL)
 	li "Scald"
+else
+	li "Steam Shot"
+endc
 	li "Trick Room"
 	li "Skill Swap"
 	li "Lick"

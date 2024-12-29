@@ -1,15 +1,15 @@
-POPUP_MAP_NAME_START  EQU $e0
-POPUP_MAP_NAME_SIZE   EQU 18
-POPUP_MAP_FRAME_START EQU $f3
-POPUP_MAP_FRAME_SIZE  EQU 8
-POPUP_MAP_FRAME_SPACE EQU $fb
+DEF POPUP_MAP_NAME_START  EQU $e0
+DEF POPUP_MAP_NAME_SIZE   EQU 18
+DEF POPUP_MAP_FRAME_START EQU $f3
+DEF POPUP_MAP_FRAME_SIZE  EQU 8
+DEF POPUP_MAP_FRAME_SPACE EQU $fb
 
 ; wLandmarkSignTimer
-MAPSIGNSTAGE_1_SLIDEOLD EQU $74
-MAPSIGNSTAGE_2_LOADGFX  EQU $68
-MAPSIGNSTAGE_3_SLIDEIN  EQU $65
-MAPSIGNSTAGE_4_VISIBLE  EQU $59
-MAPSIGNSTAGE_5_SLIDEOUT EQU $0c
+DEF MAPSIGNSTAGE_1_SLIDEOLD EQU $74
+DEF MAPSIGNSTAGE_2_LOADGFX  EQU $68
+DEF MAPSIGNSTAGE_3_SLIDEIN  EQU $65
+DEF MAPSIGNSTAGE_4_VISIBLE  EQU $59
+DEF MAPSIGNSTAGE_5_SLIDEOUT EQU $0c
 
 InitMapNameSign::
 	ld a, [wMapGroup]
@@ -100,6 +100,8 @@ InitMapNameSign::
 	ld a, SCREEN_HEIGHT_PX
 	ldh [rWY], a
 	ldh [hWY], a
+	ld hl, rIE
+	res LCD_STAT, [hl]
 	xor a
 	ldh [hLCDCPointer], a
 	ret
@@ -126,7 +128,7 @@ InitMapNameSign::
 	ret z
 	cp POWER_PLANT
 	ret z
-	cp POKEMON_MANSION
+	cp SOUL_HOUSE
 	ret z
 	cp CINNABAR_LAB
 	ret z
@@ -192,23 +194,34 @@ PlaceMapNameSign::
 .stage_5_sliding_out
 	add a
 	cpl
-	add SCREEN_HEIGHT_PX + TILE_WIDTH + 1 ; a = SCREEN_HEIGHT_PX + TILE_WIDTH - a
+	add SCREEN_HEIGHT_PX + 1 ; a = SCREEN_HEIGHT_PX - a
 .got_value
 	ldh [rWY], a
 	ldh [hWY], a
 	sub SCREEN_HEIGHT_PX
 	ret nz
+	ld hl, rIE
+	res LCD_STAT, [hl]
 	ldh [hLCDCPointer], a
+	ld hl, wWeatherFlags
+	res OW_WEATHER_LIGHTNING_DISABLED_F, [hl]
 	ret
 
 LoadMapNameSignGFX:
+	ld hl, wWeatherFlags
+	set OW_WEATHER_LIGHTNING_DISABLED_F, [hl]
 	; load opaque space
 	ld hl, vTiles0 tile POPUP_MAP_FRAME_SPACE
 	call GetOpaque1bppSpaceTile
 	; load sign frame
+	ld hl, Signs
+	ld bc, POPUP_MAP_FRAME_SIZE tiles
+	ld a, [wSign]
+	rst AddNTimes
+	ld d, h
+	ld e, l
 	ld hl, vTiles0 tile POPUP_MAP_FRAME_START
-	ld de, MapEntryFrameGFX
-	lb bc, BANK(MapEntryFrameGFX), POPUP_MAP_FRAME_SIZE
+	lb bc, BANK(Signs), POPUP_MAP_FRAME_SIZE
 	call Get2bpp
 	; clear landmark name area
 	ld hl, vTiles0 tile POPUP_MAP_NAME_START
@@ -258,7 +271,25 @@ LoadMapNameSignGFX:
 	; a = tile offset into font graphic
 	ld a, [hli]
 	cp "@"
-	ret z
+	jr nz, .continue
+
+	; copy sign palette for PAL_BG_TEXT
+	ld hl, SignPals
+	ld bc, 1 palettes
+	ld a, [wSign]
+	rst AddNTimes ; preserves bc
+	ld de, wBGPals1 palette PAL_BG_TEXT
+	call FarCopyColorWRAM
+	ld hl, wBGPals1 palette PAL_BG_TEXT
+	ld de, wBGPals2 palette PAL_BG_TEXT
+	ld bc, 1 palettes
+	call FarCopyColorWRAM
+
+	ld a, TRUE
+	ldh [hCGBPalUpdate], a
+	ret
+
+.continue
 	; save position in landmark name
 	push hl
 	; spaces are unique
@@ -303,10 +334,15 @@ LoadMapNameSignGFX:
 	pop hl
 	jr .loop
 
+SignPals:
+	table_width 1 palettes, SignPals
+INCLUDE "gfx/signs/signs.pal"
+	assert_table_length NUM_SIGNS
+
 InitMapNameFrame:
 ; InitMapSignAttrMap
 	hlcoord 0, 0
-	ld de, wAttrMap - wTileMap
+	ld de, wAttrmap - wTilemap
 	add hl, de
 	; top row
 	ld a, PRIORITY | PAL_BG_TEXT
@@ -315,14 +351,14 @@ InitMapNameFrame:
 	or X_FLIP
 	ld [hli], a
 	; middle row
-	and $ff - X_FLIP
+	and ~X_FLIP
 	ld [hli], a
 	ld bc, SCREEN_WIDTH - 2
 	rst ByteFill
 	or X_FLIP
 	ld [hli], a
 	; bottom row
-	and $ff - X_FLIP
+	and ~X_FLIP
 	ld bc, SCREEN_WIDTH - 1
 	rst ByteFill
 	or X_FLIP
