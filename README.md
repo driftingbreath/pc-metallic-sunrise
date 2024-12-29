@@ -2,7 +2,9 @@
 
 This is a modified version of [Pokémon Polished Crystal](https://github.com/Rangi42/polishedcrystal), originally based on [the Pokémon Crystal disassembly](https://github.com/pret/pokecrystal).
 
-Metallic Sunrise is designed as a "booster pack" of content, adding a handful of new species while making several changes to existing moves, type combinations, and base stats. The majority of the underlying content is still the Polished team's design, and I have zero intentions of trying to supercede or overshadow their fantastic work - I highly encourage giving the hack a look, and supporting them however you can. Key features of Metallic Sunrise include:
+Metallic Sunrise is designed as a "booster pack" of content, adding a handful of new species while making several changes to existing moves, type combinations, and base stats. The majority of the underlying content is still the Polished team's design, and I have zero intentions of trying to supercede or overshadow their fantastic work - I highly encourage giving the hack a look, and supporting them however you can.
+
+Key features of Metallic Sunrise include:
 * 13 added species of Pokémon - five from other regions, five new evolutionary members, and one all-new evolutionary line with three stages.
 * Tweaks to many underwhelming moves, such as String Shot, Horn Attack, and Flash, to make them more compelling options through the early and mid-game.
 * 5 additional TMs distributed throughout the game.
@@ -10,7 +12,6 @@ Metallic Sunrise is designed as a "booster pack" of content, adding a handful of
 * Ice Stones may be obtained by trading points with Buena, allowing certain species to evolve much earlier than Ice Path.
 
 All information below this line is currently copied verbatim from the Polished Crystal readme, and will be later edited when I approach an initial release. Thanks for your patience!
-
 
 
 ## Download and Play
